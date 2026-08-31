@@ -8,9 +8,11 @@ namespace authapi.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase {
     private readonly AuthService _authService;
+    private readonly JwtService _jwtService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, JwtService jwtService) {
         _authService = authService;
+        _jwtService = jwtService;
     }
 
     [HttpPost("register")]
@@ -30,16 +32,18 @@ public class AuthController : ControllerBase {
 
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginRequest request) {
-        var result = await _authService.LoginAsync(request);
+        var user = await _authService.LoginAsync(request);
 
-        if (!result) {
+        if (user == null) {
             return Unauthorized(new {
                 message = "Invalid email or password"
             });
         }
 
+        var token = _jwtService.GenerateToken(user);
         return Ok(new {
-            message = "Login successful"
+            message = "Login successful",
+            token = token
         });
     }
 }

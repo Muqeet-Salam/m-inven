@@ -37,13 +37,13 @@ public class AuthService {
         return true;
     }
 
-    public async Task<bool> LoginAsync(LoginRequest request) {
+    public async Task<User?> LoginAsync(LoginRequest request) {
         var user = await _mongoDb.Users
             .Find(user => user.Email == request.Email)
             .FirstOrDefaultAsync();
         
         if (user == null) {
-            return false;
+            return null;
         }
 
         var result = _passwordHasher.VerifyHashedPassword(
@@ -52,6 +52,7 @@ public class AuthService {
             request.Password
         );
 
-        return result == PasswordVerificationResult.Success;
+        if (result != PasswordVerificationResult.Success) return null;
+        return user;
     }
 }
