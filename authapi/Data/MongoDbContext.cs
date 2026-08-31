@@ -30,4 +30,7 @@ public class MongoDbContext {
 
     public IMongoCollection<User> Users =>
         _database.GetCollection<User>("Users");
+
+    public IMongoCollection<Product> Products =>
+        _database.GetCollection<Product>("Products");
 }
