@@ -15,11 +15,47 @@ public class ProductsController : ControllerBase {
         _productService = productService;
     }
 
+    [Authorize(Roles = "Admin, Manager")]
     [HttpPost]
     public async Task<IActionResult> Create(Product product) {
         var createdProduct = await _productService.CreateAsync(product);
 
         return Ok(createdProduct);
+    }
+
+    [HttpGet("{name}")]
+    public async Task<IActionResult> GetByName(string name) {
+        var product = await _productService.GetByNameAsync(name);
+        if (product == null) {
+            return NotFound(new
+            {
+                message = "Product not found"
+            });
+        }
+        return Ok(product);
+    }
+
+    [Authorize(Roles = "Admin, Manager")]
+    [HttpPut("{name}")]
+    public async Task<IActionResult> Update(string name, Product product) {
+        var updated = await _productService.UpdateAsync(name, product);
+
+        if (!updated) {
+            return NotFound(new {
+                message = "product not found"
+            });
+        }
+
+        return Ok(new{ message = "Product updated successfully" });
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpDelete]
+    public async Task<IActionResult> Delete(string name, Product product) {
+        var deleted = await _productService.DeleteAsync(name, product);
+
+        if (!deleted) return NotFound(new { message = "Product not found" });
+        return Ok(new { message = "Product Deleted" });
     }
 
     [HttpGet]
