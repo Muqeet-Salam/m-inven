@@ -13,6 +13,7 @@ builder.Services.AddSingleton<MongoDbContext>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<ProductService>();
+builder.Services.AddScoped<InventoryService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options => {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme {

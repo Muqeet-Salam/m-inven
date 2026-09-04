@@ -1,6 +1,7 @@
 using MongoDB.Driver;
 using MongoDB.Bson;
 using authapi.Models;
+using SharpCompress.Compressors.ZStandard.Unsafe;
 
 namespace authapi.Data;
 
@@ -33,4 +34,7 @@ public class MongoDbContext {
 
     public IMongoCollection<Product> Products =>
         _database.GetCollection<Product>("Products");
+
+    public IMongoCollection<InventoryTransaction> InventoryTransactions =>
+        _database.GetCollection<InventoryTransaction>("InventoryTransactions");
 }
