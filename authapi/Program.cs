@@ -7,13 +7,34 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+//Controllers
 builder.Services.AddControllers();
 
+//MongoDB
+
 builder.Services.AddSingleton<MongoDbContext>();
+
+//Services
+
 builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<ProductService>();
 builder.Services.AddScoped<InventoryService>();
+
+// CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("VueFrontend", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
+//JWT
+builder.Services.AddScoped<JwtService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options => {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme {
@@ -56,6 +77,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
+app.UseCors("VueFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
