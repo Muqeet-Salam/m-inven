@@ -86,7 +86,6 @@
             <textarea
               v-model="form.description"
               rows="3"
-              required
             ></textarea>
           </div>
 
