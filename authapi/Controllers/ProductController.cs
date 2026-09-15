@@ -1,3 +1,4 @@
+using authapi.DTOs;
 using authapi.Models;
 using authapi.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -17,8 +18,8 @@ public class ProductsController : ControllerBase {
 
     [Authorize(Roles = "Admin, Manager")]
     [HttpPost]
-    public async Task<IActionResult> Create(Product product) {
-        var createdProduct = await _productService.CreateAsync(product);
+    public async Task<IActionResult> Create(ProductCreate dto) {
+        var createdProduct = await _productService.CreateAsync(dto);
 
         return Ok(createdProduct);
     }
@@ -37,8 +38,8 @@ public class ProductsController : ControllerBase {
 
     [Authorize(Roles = "Admin, Manager")]
     [HttpPut("{name}")]
-    public async Task<IActionResult> Update(string name, Product product) {
-        var updated = await _productService.UpdateAsync(name, product);
+    public async Task<IActionResult> Update(string name, ProductUpdate dto) {
+        var updated = await _productService.UpdateAsync(name, dto);
 
         if (!updated) {
             return NotFound(new {
@@ -51,8 +52,8 @@ public class ProductsController : ControllerBase {
 
     [Authorize(Roles = "Admin")]
     [HttpDelete]
-    public async Task<IActionResult> Delete(string name, Product product) {
-        var deleted = await _productService.DeleteAsync(name, product);
+    public async Task<IActionResult> Delete(string name) {
+        var deleted = await _productService.DeleteAsync(name);
 
         if (!deleted) return NotFound(new { message = "Product not found" });
         return Ok(new { message = "Product Deleted" });
