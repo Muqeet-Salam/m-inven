@@ -1,3 +1,4 @@
+using authapi.DTOs;
 using authapi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,9 +12,9 @@ namespace authapi.Controllers;
 
 public class InventoryController : ControllerBase {
     
-    private readonly InventoryService _inventoryService;
+    private readonly IInventoryService _inventoryService;
 
-    public InventoryController(InventoryService inventoryService) {
+    public InventoryController(IInventoryService inventoryService) {
         _inventoryService = inventoryService;
     }
 
@@ -27,13 +28,14 @@ public class InventoryController : ControllerBase {
 
         if (userId == null)
             return Unauthorized();
+        
+        var dto = new InventoryTransactionDTO {
+            ProductId = productId,
+            Quantity = quantity,
+            Reason = reason,
+        };
 
-        var result = await _inventoryService.StockInAsync(
-            productId,
-            quantity,
-            reason,
-            userId
-        );
+        var result = await _inventoryService.StockInAsync(dto, userId);
 
         if (!result) {
             return BadRequest(new{ message = "Product not found" });
@@ -53,12 +55,13 @@ public class InventoryController : ControllerBase {
         if (userId == null)
             return Unauthorized();
 
-        var result = await _inventoryService.StockOutAsync(
-            productId,
-            quantity,
-            reason,
-            userId
-        );
+        var dto = new InventoryTransactionDTO {
+            ProductId = productId,
+            Quantity = quantity,
+            Reason = reason
+        };
+
+        var result = await _inventoryService.StockOutAsync(dto, userId);
 
         if (!result) {
             return BadRequest(new { message = "Product not found or insufficient stock" } );

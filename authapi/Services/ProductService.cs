@@ -5,7 +5,7 @@ using MongoDB.Driver;
 
 namespace authapi.Services;
 
-public class ProductService {
+public class ProductService : IProductService {
     private readonly MongoDbContext _mongoDb;
     
     public ProductService(MongoDbContext mongoDb) {
@@ -13,17 +13,15 @@ public class ProductService {
     }
 
     public async Task<ProductResponse> CreateAsync(ProductCreate dto) {
-        var product = new Product {
-          Name = dto.Name,
-          SKU = dto.SKU,
-          Description = dto.Description,
-          Category = dto.Category,
-          Price = dto.Price,
-          StockQuantity = dto.StockQuantity,
-          MinimumStock = dto.MinimumStock,
-          CreatedAt = DateTime.UtcNow,
-          UpdatedAt = DateTime.UtcNow
-        };
+        var product = new Product(
+          dto.Name,
+          dto.SKU,
+          dto.Description,
+          dto.Category,
+          dto.Price,
+          dto.StockQuantity,
+          dto.MinimumStock
+        );
 
         await _mongoDb.Products.InsertOneAsync(product);
         return ToResponse(product);
@@ -55,12 +53,13 @@ public class ProductService {
 
         if (existingProduct == null) return false;
 
-        existingProduct.SKU = dto.SKU;
-        existingProduct.Description = dto.Description;
-        existingProduct.Category = dto.Category;
-        existingProduct.Price = dto.Price;
-        existingProduct.MinimumStock = dto.MinimumStock;
-        existingProduct.UpdatedAt = DateTime.UtcNow;
+        existingProduct.Update(
+            dto.SKU,
+            dto.Description,
+            dto.Category,
+            dto.Price,
+            dto.MinimumStock
+        );
 
         var result = await _mongoDb.Products.ReplaceOneAsync(
             product => product.Name == name,

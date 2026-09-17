@@ -18,12 +18,11 @@ builder.Services.AddSingleton<MongoDbContext>();
 //Services
 
 builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<ProductService>();
-builder.Services.AddScoped<InventoryService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IInventoryService, InventoryService>();
 
 // CORS
-builder.Services.AddCors(options =>
-{
+builder.Services.AddCors(options => {
     options.AddPolicy("VueFrontend", policy =>
     {
         policy
