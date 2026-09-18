@@ -46,14 +46,15 @@ public class ProductService : IProductService {
             .ToList();
     }
 
-    public async Task<bool> UpdateAsync(string name, ProductUpdate dto) {
+    public async Task<bool> UpdateAsync(string id, ProductUpdate dto) {
         var existingProduct = await _mongoDb.Products
-            .Find(product => product.Name == name)
+            .Find(product => product.Id == id)
             .FirstOrDefaultAsync();
 
         if (existingProduct == null) return false;
 
         existingProduct.Update(
+            dto.Name,
             dto.SKU,
             dto.Description,
             dto.Category,
@@ -62,7 +63,7 @@ public class ProductService : IProductService {
         );
 
         var result = await _mongoDb.Products.ReplaceOneAsync(
-            product => product.Name == name,
+            product => product.Id == id,
             existingProduct
         );
         

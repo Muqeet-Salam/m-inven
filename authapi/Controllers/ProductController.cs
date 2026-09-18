@@ -37,9 +37,9 @@ public class ProductsController : ControllerBase {
     }
 
     [Authorize(Roles = "Admin, Manager")]
-    [HttpPut("{name}")]
-    public async Task<IActionResult> Update(string name, ProductUpdate dto) {
-        var updated = await _productService.UpdateAsync(name, dto);
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(string id, ProductUpdate dto) {
+        var updated = await _productService.UpdateAsync(id, dto);
 
         if (!updated) {
             return NotFound(new {

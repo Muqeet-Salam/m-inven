@@ -18,14 +18,24 @@
           <h1>Products</h1>
           <p>Manage your inventory products.</p>
         </div>
+        <div class="header-action">
+          <button
+            v-if="canManageProducts"
+            class="add-btn"
+            @click="showForm = !showForm"
+          >
+            {{ showForm ? 'Cancel' : '+ Add Product' }}
+          </button>
 
-        <button
-          v-if="canManageProducts"
-          class="add-btn"
-          @click="showForm = !showForm"
-        >
-          {{ showForm ? 'Cancel' : '+ Add Product' }}
-        </button>
+
+          <button
+            v-if="canManageProducts"
+            class="add-btn"
+            @click="showUpdForm = !showUpdForm"
+          >
+            {{ showUpdForm ? 'Cancel' : 'Update Product' }}
+          </button>
+        </div>
       </header>
 
       <!-- Add Product Form -->
@@ -98,6 +108,85 @@
           </button>
         </form>
       </div>
+      
+      <div v-if="showUpdForm" class="form-card">
+        <h2>Update Product</h2>
+
+        <form @submit.prevent="updateProduct">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Product</label>
+              <select
+                v-model="updateForm.id"
+                required
+                @change="loadProductForUpdate"
+              >
+                <option value="" disabled>
+                  Select a product
+                </option>
+
+                <option
+                  v-for="product in products"
+                  :key="product.id"
+                  :value="product.id"
+                >
+                  {{ product.name }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Name</label>
+              <input v-model="updateForm.name" type="text" required />
+            </div>
+
+            <div class="form-group">
+              <label>SKU</label>
+              <input v-model="updateForm.sku" type="text" required />
+            </div>
+
+            <div class="form-group">
+              <label>Category</label>
+              <input v-model="updateForm.category" type="text" required />
+            </div>
+
+            <div class="form-group">
+              <label>Price</label>
+              <input
+                v-model.number="updateForm.price"
+                type="number"
+                min="0"
+                step="0.01"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Minimum Stock</label>
+              <input
+                v-model.number="updateForm.minimumStock"
+                type="number"
+                min="0"
+                required
+              />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea
+              v-model="updateForm.description"
+              rows="3"
+            ></textarea>
+          </div>
+          <p v-if="updateError" class="error">
+            {{ updateError }}
+          </p>
+          <button class="submit-btn" type="submit" :disabled="updating || !updateForm.name">
+            {{ updating ? 'Updating....' : 'Update Product' }}
+          </button>
+        </form>
+      </div>
+
 
       <!-- Products -->
       <div v-if="loading" class="message">
@@ -153,9 +242,11 @@ const loading = ref(true)
 const error = ref('')
 
 const showForm = ref(false)
+const showUpdForm = ref(false)
 const saving = ref(false)
+const updating = ref(false)
 const formError = ref('')
-
+const updateError = ref('')
 const form = ref({
   name: '',
   sku: '',
@@ -163,6 +254,15 @@ const form = ref({
   category: '',
   price: 0,
   stockQuantity: 0,
+  minimumStock: 0
+})
+const updateForm = ref({
+  id: '',
+  name: '',
+  sku: '',
+  description: '',
+  category: '',
+  price: 0,
   minimumStock: 0
 })
 
@@ -250,6 +350,73 @@ const createProduct = async () => {
   }
 }
 
+const loadProductForUpdate = () => {
+  const product = products.value.find(
+    p => p.id === updateForm.value.id
+  )
+
+  if (!product) return
+
+  updateForm.value.name = product.name
+  updateForm.value.sku = product.sku
+  updateForm.value.description = product.description
+  updateForm.value.category = product.category
+  updateForm.value.price = product.price
+  updateForm.value.minimumStock = product.minimumStock
+
+  updateError.value = ''
+}
+
+const updateProduct = async () => {
+  updateError.value = ''
+  updating.value = true
+
+  try {
+    await api.put(
+      `/Products/${encodeURIComponent(updateForm.value.id)}`,
+      {
+        name: updateForm.value.name,
+        sku: updateForm.value.sku,
+        description: updateForm.value.description,
+        category: updateForm.value.category,
+        price: updateForm.value.price,
+        minimumStock: updateForm.value.minimumStock, 
+      }
+    )
+
+    showUpdForm.value = false
+
+    updateForm.value = {
+      id: '',
+      name: '',
+      sku: '',
+      description: '',
+      category: '',
+      price: 0,
+      minimumStock: 0
+    }
+
+    await loadProducts()
+  } catch (err) {
+    console.error('Failed to update product', err)
+
+    if (err.response?.status === 401) {
+      localStorage.removeItem('token')
+      router.push('/login')
+      return
+    }
+
+    if (err.response?.status === 403) {
+      updateError.value = 'You do not have permission to update'
+      return
+    }
+
+    updateError.value = err.response?.data?.message || 'Failed to update product'
+  } finally {
+    updating.value = false
+  }
+}
+
 const logout = () => {
   localStorage.removeItem('token')
   router.push('/login')
@@ -327,6 +494,11 @@ onMounted(() => {
   color: #6b7280;
 }
 
+.header-action {
+  display: flex;
+  gap: 10px;
+}
+
 .add-btn,
 .submit-btn {
   padding: 11px 18px;
@@ -364,7 +536,8 @@ onMounted(() => {
 }
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   padding: 10px;
   box-sizing: border-box;

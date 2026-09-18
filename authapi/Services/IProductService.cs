@@ -11,7 +11,7 @@ public interface IProductService
     Task<List<ProductResponse>> GetAllAsync();
 
     Task<bool> UpdateAsync(
-        string name,
+        string id,
         ProductUpdate dto);
 
     Task<bool> DeleteAsync(string name);

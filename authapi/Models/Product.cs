@@ -67,11 +67,15 @@ public class Product
     }
 
     public void Update(
+        string name,
         string sku,
         string description,
         string category,
         decimal price,
         int minimumStock) {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("Product Name is required.");
+
         if (string.IsNullOrWhiteSpace(sku))
             throw new ArgumentException("SKU is required.");
 
@@ -81,6 +85,7 @@ public class Product
         if (minimumStock < 0)
             throw new ArgumentException("Minimum stock cannot be negative.");
 
+        Name = name;
         SKU = sku;
         Description = description;
         Category = category;
