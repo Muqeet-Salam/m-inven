@@ -88,8 +88,8 @@ public class ProductService : IProductService {
             Price = product.Price,
             StockQuantity = product.StockQuantity,
             MinimumStock = product.MinimumStock,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = product.CreatedAt,
+            UpdatedAt = product.UpdatedAt
         };
     }
 

@@ -211,6 +211,7 @@
               <th>Price</th>
               <th>Stock</th>
               <th>Minimum Stock</th>
+              <th>Last Updated Time</th>
             </tr>
           </thead>
 
@@ -222,6 +223,7 @@
               <td>₹{{ product.price }}</td>
               <td>{{ product.stockQuantity }}</td>
               <td>{{ product.minimumStock }}</td>
+              <td>{{ formatDate(product.updatedAt) }}</td>
             </tr>
           </tbody>
         </table>
@@ -240,6 +242,19 @@ const router = useRouter()
 const products = ref([])
 const loading = ref(true)
 const error = ref('')
+
+const formatDate = (date) => {
+  if (!date) return '-'
+
+  return new Date(date).toLocaleString(undefined, {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  })
+}
 
 const showForm = ref(false)
 const showUpdForm = ref(false)
