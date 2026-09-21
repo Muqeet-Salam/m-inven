@@ -14,9 +14,107 @@
 
     <main class="main-content">
       <header class="page-header">
-        <h1>Inventory</h1>
-        <p>Manage stock in and stock out transactions.</p>
+        <div>
+          <h1>Inventory</h1>
+          <p>Manage stock in and stock out transactions.</p>
+        </div>
+        <div class="header-actions">
+          <button 
+            v-if="canManageTransactions"
+            class="submit-btn"
+            @click="show = !show"
+          >
+            {{ show ? 'Cancel' : 'View Transactions' }}
+          </button> 
+        </div>
       </header>
+
+      <div v-if="show" class="inventory-card">
+        <h2>Select Product</h2>
+        <form @submit.prevent="getTransactions">
+          <div class="form-group">
+            <label>Product</label>
+            <select v-model="selectedProductIdForTransaction" required>
+              <option value="" disabled>
+                Select a product
+              </option>
+
+              <option
+                v-for="product in products"
+                :key="product.id"
+                :value="product.id"
+              >
+                {{ product.name }} — {{ product.sku }}
+              </option>
+            </select>
+          </div>
+          <button
+            class="submit-btn"
+            type="submit"
+            :disabled="loadingTransactions"
+          >
+            {{ loadingTransactions ? 'Loading...' : 'Get Transactions' }}
+          </button>
+        </form>
+      </div>
+
+      <div
+        v-if="show && selectedProductIdForTransaction && !loadingTransactions"
+        class="products-card"
+      >
+        <h2>Transaction History</h2>
+
+        <div v-if="transactions.length === 0" class="message">
+          No transactions found for this product.
+        </div>
+
+        <div v-else class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Quantity</th>
+                <th>Reason</th>
+                <th>User</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr
+                v-for="transaction in transactions"
+                :key="transaction.id"
+              >
+                <td>
+                  <span
+                    :class="
+                      transaction.type === 'StockIn'
+                        ? 'in-stock'
+                        : 'low-stock'
+                    "
+                  >
+                    {{ transaction.type === 'StockIn' ? 'Stock In' : 'Stock Out' }}
+                  </span>
+                </td>
+
+                <td>{{ transaction.quantity }}</td>
+
+                <td>
+                  {{ transaction.reason || '—' }}
+                </td>
+
+                <td>
+                  {{ transaction.userId }}
+                </td>
+
+                <td>
+                  {{ formatDate(transaction.createdAt) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       <div class="inventory-card">
         <h2>Stock Transaction</h2>
@@ -170,27 +268,55 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { routeLocationKey, useRouter } from 'vue-router'
 import api from '../services/api'
 
 const router = useRouter()
 
 const products = ref([])
 const selectedProductId = ref('')
+const selectedProductIdForTransaction = ref('')
 const transactionType = ref('stock-in')
 const quantity = ref(1)
 const reason = ref('')
 
 const loading = ref(true)
 const saving = ref(false)
-
+const show = ref(false)
+const transactions = ref([])
+const loadingTransactions = ref(false)
 const error = ref('')
 const success = ref('')
+
+
+const getRoleFromToken = () => {
+  const token = localStorage.getItem('token')
+
+  if (!token) {
+    return null
+  }
+
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+
+    return payload[
+      'http://schemas.microsoft.com/ws/2008/06/identity/claims/role'
+    ]
+  } catch {
+    return null
+  }
+}
+
+const role = computed(() => getRoleFromToken())
 
 const selectedProduct = computed(() => {
   return products.value.find(
     product => product.id === selectedProductId.value
   )
+})
+
+const canManageTransactions = computed(() => {
+  return role.value === 'Admin' || role.value === 'Manager'
 })
 
 const loadProducts = async () => {
@@ -214,6 +340,47 @@ const loadProducts = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const getTransactions = async () => {
+  error.value = ''
+  transactions.value = []
+
+  if (!selectedProductIdForTransaction.value) {
+    error.value = 'Please select a Product'
+    return
+  }
+
+  loadingTransactions.value = true
+
+  try {
+    const response = await api.get(
+      `/Inventory/${encodeURIComponent(selectedProductIdForTransaction.value)}`
+    )
+    transactions.value = response.data
+    console.log('hi')
+  } catch (err) {
+      console.error('Failed to load transactions:', err)
+
+      if (err.response?.status === 401) {
+        localStorage.removeItem('token')
+        router.push('/login')
+        return
+      }
+
+      if (err.response?.status === 403) {
+        error.value =
+          'You do not have permission to view transactions.'
+        return
+      }
+
+      error.value =
+        err.response?.data?.message ||
+        'Failed to load transactions.'
+
+    } finally {
+      loadingTransactions.value = false
+    }
 }
 
 const submitTransaction = async () => {
@@ -283,7 +450,20 @@ const submitTransaction = async () => {
     saving.value = false
   }
 }
+const formatDate = (date) => {
+  if (!date) return '—'
 
+  return new Date(date).toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  })
+}
 const logout = () => {
   localStorage.removeItem('token')
   router.push('/login')
