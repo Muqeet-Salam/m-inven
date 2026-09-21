@@ -7,6 +7,6 @@ public class InventoryTransactionResponse {
     public int Quantity { get; set; }
     public string? Reason { get; set; }
     public string UserId { get; set; } = null!;
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; }
 
 }

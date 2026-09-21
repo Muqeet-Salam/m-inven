@@ -64,4 +64,26 @@ public class InventoryService : IInventoryService {
 
         return true;
     }
+
+    public async Task<List<InventoryTransactionResponse>> GetTransactionAsync(string id) {
+        var transactions = await _mongoDb.InventoryTransactions
+            .Find(transaction => transaction.ProductId == id)
+            .ToListAsync();
+
+        return transactions
+            .Select(ToResponse)
+            .ToList();
+    }
+
+    private static InventoryTransactionResponse ToResponse(InventoryTransaction transaction) {
+        return new InventoryTransactionResponse {
+          Id = transaction.Id,
+          ProductId = transaction.ProductId,
+          Type = transaction.Type,
+          Quantity = transaction.Quantity,
+          Reason = transaction.Reason,
+          UserId = transaction.UserId,
+          CreatedAt = transaction.CreatedAt
+        };
+    }
 }

@@ -6,4 +6,6 @@ public interface IInventoryService {
     Task<bool> StockInAsync(InventoryTransactionDTO dto, string userId);
 
     Task<bool> StockOutAsync(InventoryTransactionDTO dto, string userId);
+
+    Task<List<InventoryTransactionResponse>> GetTransactionAsync(string id);
 }

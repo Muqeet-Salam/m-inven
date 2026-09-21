@@ -69,4 +69,11 @@ public class InventoryController : ControllerBase {
 
         return Ok(new { message = "Stock removed successfully" } );
     }
+
+    [Authorize(Roles = "Admin,Manager")]
+    [HttpGet("{productId}")]
+    public async Task<IActionResult> GetTransactions(string productId) {
+        var transactions = await _inventoryService.GetTransactionAsync(productId);
+        return Ok(transactions);
+    }
 }
