@@ -55,4 +55,33 @@ public class AuthService {
         if (result != PasswordVerificationResult.Success) return null;
         return user;
     }
+
+    public async Task<bool> ChangeRoleAsync(string userId, string role) {
+        var allowedRoles = new[]
+        {
+            "Admin",
+            "Manager",
+            "Staff",
+            "Viewer"
+        };
+
+        if (!allowedRoles.Contains(role))
+            return false;
+
+        var user = await _mongoDb.Users
+            .Find(u => u.Id == userId)
+            .FirstOrDefaultAsync();
+
+        if (user == null)
+            return false;
+
+        user.Role = role;
+
+        await _mongoDb.Users.ReplaceOneAsync(
+            u => u.Id == userId,
+            user
+        );
+
+        return true;
+    }
 }

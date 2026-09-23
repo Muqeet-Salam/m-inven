@@ -1,6 +1,7 @@
 using authapi.DTOs;
 using authapi.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace authapi.Controllers;
 
@@ -44,6 +45,31 @@ public class AuthController : ControllerBase {
         return Ok(new {
             message = "Login successful",
             token = token
+        });
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPut("users/{userId}/role")]
+    public async Task<IActionResult> ChangeUserRole(
+        string userId,
+        ChangeRoleRequest request)
+    {
+        var result = await _authService.ChangeRoleAsync(
+            userId,
+            request.Role
+        );
+
+        if (!result)
+        {
+            return BadRequest(new
+            {
+                message = "Invalid role or user not found"
+            });
+        }
+
+        return Ok(new
+        {
+            message = "User role updated successfully"
         });
     }
 }
