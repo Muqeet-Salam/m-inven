@@ -1,5 +1,6 @@
 using authapi.Data;
 using authapi.DTOs;
+using authapi.Enums;
 using authapi.Models;
 using Microsoft.AspNetCore.Identity;
 using MongoDB.Driver;
@@ -56,17 +57,7 @@ public class AuthService {
         return user;
     }
 
-    public async Task<bool> ChangeRoleAsync(string userId, string role) {
-        var allowedRoles = new[]
-        {
-            "Admin",
-            "Manager",
-            "Staff",
-            "Viewer"
-        };
-
-        if (!allowedRoles.Contains(role))
-            return false;
+    public async Task<bool> ChangeRoleAsync(string userId, Role role) {
 
         var user = await _mongoDb.Users
             .Find(u => u.Id == userId)
