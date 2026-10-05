@@ -18,103 +18,10 @@
           <h1>Inventory</h1>
           <p>Manage stock in and stock out transactions.</p>
         </div>
-        <div class="header-actions">
-          <button 
-            v-if="canManageTransactions"
-            class="submit-btn"
-            @click="show = !show"
-          >
-            {{ show ? 'Cancel' : 'View Transactions' }}
-          </button> 
-        </div>
+
       </header>
 
-      <div v-if="show" class="inventory-card">
-        <h2>Select Product</h2>
-        <form @submit.prevent="getTransactions">
-          <div class="form-group">
-            <label>Product</label>
-            <select v-model="selectedProductIdForTransaction" required>
-              <option value="" disabled>
-                Select a product
-              </option>
 
-              <option
-                v-for="product in products"
-                :key="product.id"
-                :value="product.id"
-              >
-                {{ product.name }} — {{ product.sku }}
-              </option>
-            </select>
-          </div>
-          <button
-            class="submit-btn"
-            type="submit"
-            :disabled="loadingTransactions"
-          >
-            {{ loadingTransactions ? 'Loading...' : 'Get Transactions' }}
-          </button>
-        </form>
-      </div>
-
-      <div
-        v-if="show && selectedProductIdForTransaction && !loadingTransactions"
-        class="products-card"
-      >
-        <h2>Transaction History</h2>
-
-        <div v-if="transactions.length === 0" class="message">
-          No transactions found for this product.
-        </div>
-
-        <div v-else class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Quantity</th>
-                <th>Reason</th>
-                <th>User</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              <tr
-                v-for="transaction in transactions"
-                :key="transaction.id"
-              >
-                <td>
-                  <span
-                    :class="
-                      transaction.type === 'StockIn'
-                        ? 'in-stock'
-                        : 'low-stock'
-                    "
-                  >
-                    {{ transaction.type === 'StockIn' ? 'Stock In' : 'Stock Out' }}
-                  </span>
-                </td>
-
-                <td>{{ transaction.quantity }}</td>
-
-                <td>
-                  {{ transaction.reason || '—' }}
-                </td>
-
-                <td>
-                  {{ transaction.userId }}
-                </td>
-
-                <td>
-                  {{ formatDate(transaction.createdAt) }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
 
       <div class="inventory-card">
         <h2>Stock Transaction</h2>
@@ -270,6 +177,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { routeLocationKey, useRouter } from 'vue-router'
 import api from '../services/api'
+import { formatDate } from '../utils/formatDate'
 
 const router = useRouter()
 
@@ -307,7 +215,6 @@ const getRoleFromToken = () => {
   }
 }
 
-const role = computed(() => getRoleFromToken())
 
 const selectedProduct = computed(() => {
   return products.value.find(
@@ -315,9 +222,6 @@ const selectedProduct = computed(() => {
   )
 })
 
-const canManageTransactions = computed(() => {
-  return role.value === 'Admin' || role.value === 'Manager'
-})
 
 const loadProducts = async () => {
   loading.value = true
@@ -450,20 +354,7 @@ const submitTransaction = async () => {
     saving.value = false
   }
 }
-const formatDate = (date) => {
-  if (!date) return '—'
 
-  return new Date(date).toLocaleString('en-IN', {
-    timeZone: 'Asia/Kolkata',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: true
-  })
-}
 const logout = () => {
   localStorage.removeItem('token')
   router.push('/login')

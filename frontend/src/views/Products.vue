@@ -27,14 +27,6 @@
             {{ showForm ? 'Cancel' : '+ Add Product' }}
           </button>
 
-
-          <button
-            v-if="canManageProducts"
-            class="add-btn"
-            @click="showUpdForm = !showUpdForm"
-          >
-            {{ showUpdForm ? 'Cancel' : 'Update Product' }}
-          </button>
         </div>
       </header>
 
@@ -108,85 +100,6 @@
           </button>
         </form>
       </div>
-      
-      <div v-if="showUpdForm" class="form-card">
-        <h2>Update Product</h2>
-
-        <form @submit.prevent="updateProduct">
-          <div class="form-grid">
-            <div class="form-group">
-              <label>Product</label>
-              <select
-                v-model="updateForm.id"
-                required
-                @change="loadProductForUpdate"
-              >
-                <option value="" disabled>
-                  Select a product
-                </option>
-
-                <option
-                  v-for="product in products"
-                  :key="product.id"
-                  :value="product.id"
-                >
-                  {{ product.name }}
-                </option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>Name</label>
-              <input v-model="updateForm.name" type="text" required />
-            </div>
-
-            <div class="form-group">
-              <label>SKU</label>
-              <input v-model="updateForm.sku" type="text" required />
-            </div>
-
-            <div class="form-group">
-              <label>Category</label>
-              <input v-model="updateForm.category" type="text" required />
-            </div>
-
-            <div class="form-group">
-              <label>Price</label>
-              <input
-                v-model.number="updateForm.price"
-                type="number"
-                min="0"
-                step="0.01"
-                required
-              />
-            </div>
-
-            <div class="form-group">
-              <label>Minimum Stock</label>
-              <input
-                v-model.number="updateForm.minimumStock"
-                type="number"
-                min="0"
-                required
-              />
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Description</label>
-            <textarea
-              v-model="updateForm.description"
-              rows="3"
-            ></textarea>
-          </div>
-          <p v-if="updateError" class="error">
-            {{ updateError }}
-          </p>
-          <button class="submit-btn" type="submit" :disabled="updating || !updateForm.name">
-            {{ updating ? 'Updating....' : 'Update Product' }}
-          </button>
-        </form>
-      </div>
-
 
       <!-- Products -->
       <div v-if="loading" class="message">
@@ -206,27 +119,251 @@
           <thead>
             <tr>
               <th>Name</th>
-              <th>SKU</th>
-              <th>Category</th>
               <th>Price</th>
               <th>Stock</th>
-              <th>Minimum Stock</th>
               <th>Last Updated Time</th>
             </tr>
           </thead>
 
           <tbody>
-            <tr v-for="product in products" :key="product.id">
+            <tr v-for="product in products" :key="product.id" class="product-row" @click="openProduct(product)">
               <td>{{ product.name }}</td>
-              <td>{{ product.sku }}</td>
-              <td>{{ product.category }}</td>
               <td>₹{{ product.price }}</td>
               <td>{{ product.stockQuantity }}</td>
-              <td>{{ product.minimumStock }}</td>
               <td>{{ formatDate(product.updatedAt) }}</td>
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Product Details Modal -->
+      <div v-if="showProductModal" class="modal-overlay" @click.self="closeProductModal">
+        <div class="modal">
+          <div class="modal-header">
+            <div>
+              <h2>{{ selectedProduct.name }}</h2>
+              <p>{{ selectedProduct.sku }}</p>
+            </div>
+
+            <button class="close-btn" @click="closeProductModal">
+              ×
+            </button>
+          </div>
+
+          <div class="product-details">
+            <div class="detail-item">
+              <span>Category</span>
+              <strong>{{ selectedProduct.category }}</strong>
+            </div>
+
+            <div class="detail-item">
+              <span>Price</span>
+              <strong>₹{{ selectedProduct.price }}</strong>
+            </div>
+
+            <div class="detail-item">
+              <span>Current Stock</span>
+              <strong>{{ selectedProduct.stockQuantity }}</strong>
+            </div>
+
+            <div class="detail-item">
+              <span>Minimum Stock</span>
+              <strong>{{ selectedProduct.minimumStock }}</strong>
+            </div>
+
+            <div class="detail-item">
+              <span>Created</span>
+              <strong>{{ formatDate(selectedProduct.createdAt) }}</strong>
+            </div>
+
+            <div class="detail-item">
+              <span>Last Updated</span>
+              <strong>{{ formatDate(selectedProduct.updatedAt) }}</strong>
+            </div>
+
+            <div class="detail-item description">
+              <span>Description</span>
+              <p>
+                {{ selectedProduct.description || 'No description provided.' }}
+              </p>
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button v-if="canManageProducts" class="action-btn" @click="openUpdateModal(selectedProduct)">
+              Update Product
+            </button>
+
+            <button v-if="role === 'Admin'" class="action-btn" @click="openTransactionsModal(selectedProduct)">
+              View Transactions
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Update Product Modal -->
+      <div
+        v-if="showUpdateModal"
+        class="modal-overlay"
+        @click.self="closeUpdateModal"
+      >
+        <div class="modal">
+          <div class="modal-header">
+            <h2>Update Product</h2>
+
+            <button class="close-btn" @click="closeUpdateModal">
+              ×
+            </button>
+          </div>
+
+          <form @submit.prevent="updateProduct">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Name</label>
+                <input
+                  v-model="updateForm.name"
+                  type="text"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label>SKU</label>
+                <input
+                  v-model="updateForm.sku"
+                  type="text"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Category</label>
+                <input
+                  v-model="updateForm.category"
+                  type="text"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Price</label>
+                <input
+                  v-model.number="updateForm.price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Minimum Stock</label>
+                <input
+                  v-model.number="updateForm.minimumStock"
+                  type="number"
+                  min="0"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Description</label>
+              <textarea
+                v-model="updateForm.description"
+                rows="4"
+              ></textarea>
+            </div>
+
+            <p v-if="updateError" class="error">
+              {{ updateError }}
+            </p>
+
+            <button class="submit-btn" type="submit" :disabled="updating || !updateForm.name">
+              {{ updating ? 'Updating...' : 'Update Product' }}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Transactions Modal -->
+      <div
+        v-if="showTransactionsModal"
+        class="modal-overlay"
+        @click.self="closeTransactionsModal"
+      >
+        <div class="modal transactions-modal">
+          <div class="modal-header">
+            <div>
+              <h2>Transaction History</h2>
+              <p>{{ selectedProduct.name }}</p>
+            </div>
+
+            <button class="close-btn" @click="closeTransactionsModal">
+              ×
+            </button>
+          </div>
+
+          <div v-if="loadingTransactions" class="message">
+            Loading transactions...
+          </div>
+
+          <div
+            v-else-if="transactions.length === 0"
+            class="message"
+          >
+            No transactions found for this product.
+          </div>
+
+          <div v-else class="transaction-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Quantity</th>
+                  <th>Reason</th>
+                  <th>User</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr
+                  v-for="transaction in transactions"
+                  :key="transaction.id"
+                >
+                  <td>
+                    <span
+                      :class="
+                        transaction.type === 'StockIn'
+                          ? 'in-stock'
+                          : 'stock-out'
+                      "
+                    >
+                      {{
+                        transaction.type === 'StockIn'
+                          ? 'Stock In'
+                          : 'Stock Out'
+                      }}
+                    </span>
+                  </td>
+
+                  <td>{{ transaction.quantity }}</td>
+
+                  <td>
+                    {{ transaction.reason || '—' }}
+                  </td>
+
+                  <td>{{ transaction.userId }}</td>
+
+                  <td>
+                    {{ formatDate(transaction.createdAt) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </main>
   </div>
@@ -236,6 +373,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../services/api'
+import { formatDate } from '../utils/formatDate'
 
 const router = useRouter()
 
@@ -243,24 +381,19 @@ const products = ref([])
 const loading = ref(true)
 const error = ref('')
 
-const formatDate = (date) => {
-  if (!date) return '-'
-
-  return new Date(date).toLocaleString(undefined, {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true
-  })
-}
 
 const showForm = ref(false)
-const showUpdForm = ref(false)
 const saving = ref(false)
-const updating = ref(false)
 const formError = ref('')
+const showProductModal = ref(false)
+const showUpdateModal = ref(false)
+const showTransactionsModal = ref(false)
+
+const selectedProduct = ref(null)
+
+const transactions = ref([])
+const loadingTransactions = ref(false)
+const updating = ref(false)
 const updateError = ref('')
 const form = ref({
   name: '',
@@ -304,6 +437,16 @@ const role = computed(() => getRoleFromToken())
 const canManageProducts = computed(() => {
   return role.value === 'Admin' || role.value === 'Manager'
 })
+
+const openProduct = (product) => {
+  selectedProduct.value = product
+  showProductModal.value = true
+}
+
+const closeProductModal = () => {
+  showProductModal.value = false
+  selectedProduct.value = null
+}
 
 const loadProducts = async () => {
   try {
@@ -365,21 +508,74 @@ const createProduct = async () => {
   }
 }
 
-const loadProductForUpdate = () => {
-  const product = products.value.find(
-    p => p.id === updateForm.value.id
-  )
-
-  if (!product) return
-
-  updateForm.value.name = product.name
-  updateForm.value.sku = product.sku
-  updateForm.value.description = product.description
-  updateForm.value.category = product.category
-  updateForm.value.price = product.price
-  updateForm.value.minimumStock = product.minimumStock
+const openUpdateModal = (product) => {
+  updateForm.value = {
+    id: product.id,
+    name: product.name,
+    sku: product.sku,
+    description: product.description,
+    category: product.category,
+    price: product.price,
+    minimumStock: product.minimumStock
+  }
 
   updateError.value = ''
+
+  showProductModal.value = false
+  showUpdateModal.value = true
+}
+
+const closeUpdateModal = () => {
+  showUpdateModal.value = false
+
+  updateForm.value = {
+    id: '',
+    name: '',
+    sku: '',
+    description: '',
+    category: '',
+    price: 0,
+    minimumStock: 0
+  }
+
+  updateError.value = ''
+}
+
+const openTransactionsModal = async (product) => {
+  selectedProduct.value = product
+  showProductModal.value = false
+  showTransactionsModal.value = true
+
+  transactions.value = []
+  loadingTransactions.value = true
+
+  try {
+    const response = await api.get(
+      `/Inventory/${encodeURIComponent(product.id)}`
+    )
+
+    transactions.value = response.data
+  } catch (err) {
+    console.error('Failed to load transactions:', err)
+
+    if (err.response?.status === 401) {
+      localStorage.removeItem('token')
+      router.push('/login')
+      return
+    }
+
+    if (err.response?.status === 403) {
+      transactions.value = []
+      return
+    }
+  } finally {
+    loadingTransactions.value = false
+  }
+}
+
+const closeTransactionsModal = () => {
+  showTransactionsModal.value = false
+  transactions.value = []
 }
 
 const updateProduct = async () => {
@@ -590,6 +786,195 @@ td {
 
 th {
   background: #f9fafb;
+}
+
+/* Product row */
+
+.product-row {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.product-row:hover {
+  background: #f3f4f6;
+}
+
+
+/* Modal */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal {
+  width: 100%;
+  max-width: 650px;
+  max-height: 90vh;
+  overflow-y: auto;
+
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.transactions-modal {
+  max-width: 900px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  margin-bottom: 25px;
+}
+
+.modal-header h2 {
+  margin: 0 0 5px;
+}
+
+.modal-header p {
+  margin: 0;
+  color: #6b7280;
+}
+
+.close-btn {
+  border: none;
+  background: none;
+
+  font-size: 28px;
+  line-height: 1;
+
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.close-btn:hover {
+  color: #111827;
+}
+
+
+/* Product details */
+
+.product-details {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+
+  margin-bottom: 25px;
+}
+
+.detail-item {
+  padding: 14px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.detail-item span {
+  display: block;
+  margin-bottom: 5px;
+
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.detail-item strong {
+  font-size: 15px;
+}
+
+.detail-item.description {
+  grid-column: 1 / -1;
+}
+
+.detail-item.description p {
+  margin: 5px 0 0;
+  line-height: 1.5;
+}
+
+
+/* Modal actions */
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.action-btn {
+  padding: 11px 18px;
+
+  border: none;
+  border-radius: 6px;
+
+  cursor: pointer;
+  font-weight: 500;
+}
+
+
+/* Transactions */
+
+.transaction-table {
+  overflow-x: auto;
+}
+
+.transaction-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.transaction-table th,
+.transaction-table td {
+  padding: 13px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.transaction-table th {
+  background: #f9fafb;
+}
+
+.in-stock {
+  color: #15803d;
+  font-weight: 600;
+}
+
+.stock-out {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+
+/* Mobile */
+
+@media (max-width: 700px) {
+  .modal {
+    padding: 20px;
+  }
+
+  .product-details {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-item.description {
+    grid-column: auto;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+  }
 }
 
 .message {
