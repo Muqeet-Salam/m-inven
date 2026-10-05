@@ -1,6 +1,7 @@
 namespace authapi.DTOs;
+using authapi.Enums;
 
 public class ChangeRoleRequest
 {
-    public string Role { get; set; } = null!;
+    public Role Role { get; set; }
 }
